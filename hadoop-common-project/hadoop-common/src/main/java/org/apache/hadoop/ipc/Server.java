@@ -1416,7 +1416,7 @@ public abstract class Server {
         readers[i] = reader;
         reader.start();
       }
-
+      LOG.info("xbis: latest jar from trunk");
       // Register accepts on the server socket with the selector.
       acceptChannel.register(selector, SelectionKey.OP_ACCEPT);
       this.setName("IPC Server listener on " + port);
