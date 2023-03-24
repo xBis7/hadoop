@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-name: website
+name: build and deploy
 
 # Controls when the action will run.
 on:
