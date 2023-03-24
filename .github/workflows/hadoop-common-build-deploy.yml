@@ -46,6 +46,6 @@ jobs:
       - name: Build Hadoop
         run: mvn clean install -DskipTests -DskipShade
       - name: Deploy to GitHub
-        run: cd hadoop-common-project/hadoop-common/ && mvn --batch-mode -DuseGitHubPackages=true deploy
+        run: cd hadoop-common-project/hadoop-common/ && mvn --batch-mode -DuseGitHubPackages=true deploy -DskipTests
         env:
           github_token: ${{ secrets.DEPLOY_TOKEN }}
