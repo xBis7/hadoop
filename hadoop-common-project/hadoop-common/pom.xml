@@ -684,6 +684,22 @@
 
   <profiles>
     <profile>
+      <id>hadoop-common-trunk</id>
+      <activation>
+        <property>
+          <name>useGitHubPackages</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <distributionManagement>
+        <repository>
+          <id>hadoop-common-trunk</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/xbis7/hadoop-common-trunk</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+    <profile>
       <id>native</id>
       <activation>
         <activeByDefault>false</activeByDefault>
