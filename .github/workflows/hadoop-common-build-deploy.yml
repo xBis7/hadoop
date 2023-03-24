@@ -44,7 +44,7 @@ jobs:
       - name: Build Hadoop maven plugins
         run: cd hadoop-maven-plugins && mvn --batch-mode install
       - name: Build Hadoop
-        run: cd hadoop-common-project/ && mvn clean install -DskipTests -DskipShade
+        run: mvn clean install -DskipTests -DskipShade
       - name: Deploy to GitHub
         run: cd hadoop-common-project/hadoop-common/ && mvn --batch-mode -DuseGitHubPackages=true deploy
         env:
