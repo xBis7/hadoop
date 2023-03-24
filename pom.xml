@@ -692,6 +692,22 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
 
   <profiles>
     <profile>
+      <id>github</id>
+      <activation>
+        <property>
+          <name>useGitHubPackages</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <distributionManagement>
+        <repository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/xbis7/hadoop-custom</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+    <profile>
       <id>src</id>
       <activation>
         <activeByDefault>false</activeByDefault>
