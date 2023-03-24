@@ -35,28 +35,33 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
   </dependencyManagement>
 
   <distributionManagement>
+<!--    <repository>-->
+<!--      <id>${distMgmtStagingId}</id>-->
+<!--      <name>${distMgmtStagingName}</name>-->
+<!--      <url>${distMgmtStagingUrl}</url>-->
+<!--    </repository>-->
+<!--    <snapshotRepository>-->
+<!--      <id>${distMgmtSnapshotsId}</id>-->
+<!--      <name>${distMgmtSnapshotsName}</name>-->
+<!--      <url>${distMgmtSnapshotsUrl}</url>-->
+<!--    </snapshotRepository>-->
+<!--    <site>-->
+<!--      <id>apache.website</id>-->
+<!--      <url>scpexe://people.apache.org/www/hadoop.apache.org/docs/r${project.version}</url>-->
+<!--    </site>-->
     <repository>
-      <id>${distMgmtStagingId}</id>
-      <name>${distMgmtStagingName}</name>
-      <url>${distMgmtStagingUrl}</url>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/xBis7/hadoop</url>
     </repository>
-    <snapshotRepository>
-      <id>${distMgmtSnapshotsId}</id>
-      <name>${distMgmtSnapshotsName}</name>
-      <url>${distMgmtSnapshotsUrl}</url>
-    </snapshotRepository>
-    <site>
-      <id>apache.website</id>
-      <url>scpexe://people.apache.org/www/hadoop.apache.org/docs/r${project.version}</url>
-    </site>
   </distributionManagement>
 
   <repositories>
-    <repository>
-      <id>${distMgmtSnapshotsId}</id>
-      <name>${distMgmtSnapshotsName}</name>
-      <url>${distMgmtSnapshotsUrl}</url>
-    </repository>
+<!--    <repository>-->
+<!--      <id>${distMgmtSnapshotsId}</id>-->
+<!--      <name>${distMgmtSnapshotsName}</name>-->
+<!--      <url>${distMgmtSnapshotsUrl}</url>-->
+<!--    </repository>-->
     <repository>
       <id>repository.jboss.org</id>
       <url>https://repository.jboss.org/nexus/content/groups/public/</url>
@@ -82,12 +87,12 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     <!-- required as child projects with different version can't use ${project.version} -->
     <hadoop.version>3.4.0-SNAPSHOT</hadoop.version>
 
-    <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
-    <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
-    <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
-    <distMgmtStagingId>apache.staging.https</distMgmtStagingId>
-    <distMgmtStagingName>Apache Release Distribution Repository</distMgmtStagingName>
-    <distMgmtStagingUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtStagingUrl>
+<!--    <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>-->
+<!--    <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>-->
+<!--    <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>-->
+<!--    <distMgmtStagingId>apache.staging.https</distMgmtStagingId>-->
+<!--    <distMgmtStagingName>Apache Release Distribution Repository</distMgmtStagingName>-->
+<!--    <distMgmtStagingUrl>https://repository.apache.org/service/local/staging/deploy/maven2</distMgmtStagingUrl>-->
 
     <!-- platform encoding override -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -691,22 +696,6 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
   </reporting>
 
   <profiles>
-    <profile>
-      <id>github</id>
-      <activation>
-        <property>
-          <name>useGitHubPackages</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <distributionManagement>
-        <repository>
-          <id>github</id>
-          <name>GitHub Packages</name>
-          <url>https://maven.pkg.github.com/xbis7/hadoop-custom</url>
-        </repository>
-      </distributionManagement>
-    </profile>
     <profile>
       <id>src</id>
       <activation>
