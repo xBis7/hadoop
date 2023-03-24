@@ -50,6 +50,6 @@ jobs:
       - name: Stage document
         run: mvn site:stage -DstagingDirectory=${GITHUB_WORKSPACE}/staging/
       - name: Deploy to GitHub
-        run: cd hadoop-common-project && mvn --batch-mode -DuseGitHubPackages=true deploy
+        run: mvn --batch-mode -DuseGitHubPackages=true deploy
         env:
           github_token: ${{ secrets.DEPLOY_TOKEN }}
