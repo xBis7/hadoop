@@ -43,12 +43,8 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Build Hadoop maven plugins
         run: cd hadoop-maven-plugins && mvn --batch-mode install
-      - name: Build Hadoop
-        run: mvn clean install -DskipTests -DskipShade
-      - name: Build document
-        run: mvn clean site
-      - name: Stage document
-        run: mvn site:stage -DstagingDirectory=${GITHUB_WORKSPACE}/staging/
+      - name: Build Hadoop commons
+        run: cd hadoop-common-project/hadoop-common/ && mvn clean install -DskipTests -DskipShade
       - name: Deploy to GitHub
         run: cd hadoop-common-project/hadoop-common/ && mvn --batch-mode -DuseGitHubPackages=true deploy
         env:
