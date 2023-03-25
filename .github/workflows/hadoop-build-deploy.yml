@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-name: build and deploy
+name: Deploy to GitHub packages
 
 # Controls when the action will run.
 on:
@@ -40,4 +40,4 @@ jobs:
       - name: Publish to GitHub Packages Apache Maven
         run: mvn deploy -DskipShade -DskipTests -s $GITHUB_WORKSPACE/settings.xml
         env:
-          GITHUB_TOKEN: ${{ github.DEPLOY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
