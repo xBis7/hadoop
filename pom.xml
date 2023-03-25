@@ -45,30 +45,35 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
 <!--      <name>${distMgmtStagingName}</name>-->
 <!--      <url>${distMgmtStagingUrl}</url>-->
 <!--    </repository>-->
-    <snapshotRepository>
-      <id>${distMgmtSnapshotsId}</id>
-      <name>${distMgmtSnapshotsName}</name>
-      <url>${distMgmtSnapshotsUrl}</url>
-    </snapshotRepository>
-    <site>
-      <id>apache.website</id>
-      <url>scpexe://people.apache.org/www/hadoop.apache.org/docs/r${project.version}</url>
-    </site>
+<!--    <snapshotRepository>-->
+<!--      <id>${distMgmtSnapshotsId}</id>-->
+<!--      <name>${distMgmtSnapshotsName}</name>-->
+<!--      <url>${distMgmtSnapshotsUrl}</url>-->
+<!--    </snapshotRepository>-->
+<!--    <site>-->
+<!--      <id>apache.website</id>-->
+<!--      <url>scpexe://people.apache.org/www/hadoop.apache.org/docs/r${project.version}</url>-->
+<!--    </site>-->
   </distributionManagement>
 
   <repositories>
     <repository>
-      <id>${distMgmtSnapshotsId}</id>
-      <name>${distMgmtSnapshotsName}</name>
-      <url>${distMgmtSnapshotsUrl}</url>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/xBis7/hadoop</url>
     </repository>
-    <repository>
-      <id>repository.jboss.org</id>
-      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
+<!--    <repository>-->
+<!--      <id>${distMgmtSnapshotsId}</id>-->
+<!--      <name>${distMgmtSnapshotsName}</name>-->
+<!--      <url>${distMgmtSnapshotsUrl}</url>-->
+<!--    </repository>-->
+<!--    <repository>-->
+<!--      <id>repository.jboss.org</id>-->
+<!--      <url>https://repository.jboss.org/nexus/content/groups/public/</url>-->
+<!--      <snapshots>-->
+<!--        <enabled>false</enabled>-->
+<!--      </snapshots>-->
+<!--    </repository>-->
   </repositories>
 
   <licenses>
