@@ -3000,6 +3000,7 @@ public abstract class Server {
       // RetriableException.
       rpcMetrics.incrClientBackoff();
       // unwrap retriable exception.
+      LOG.info("xbis: backoff ex: " + Arrays.toString(cqe.getStackTrace()));
       throw cqe.getCause();
     }
   }
