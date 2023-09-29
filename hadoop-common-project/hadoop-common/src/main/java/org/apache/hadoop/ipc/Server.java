@@ -2977,6 +2977,21 @@ public abstract class Server {
       call.getProcessingDetails().set(Timing.ENQUEUE, deltaNanos,
           TimeUnit.NANOSECONDS);
     } catch (CallQueueOverflowException cqe) {
+      if (call instanceof RpcCall) {
+        RpcCall rpcCall = (RpcCall) call;
+        LOG.info("xbis: " +
+            "\n===== Backoff/Before put ===== Thread: " + Thread.currentThread().getName() +
+            "\nqueue size:              " + callQueue.size() + " | " +
+            "\nremainingCapacity:       " + callQueue.remainingCapacity() + " | " +
+            "\nqueue callId:            " + call.callId + " | " +
+            "\ncallerContext:           " + call.getCallerContext().getContext() + " | " +
+            "\npriority:                " + call.priorityLevel + " | " +
+            "\nrpcCall.remoteUser:      " + rpcCall.getRemoteUser().getUserName() + " | " +
+            "\nconnection.remoteUser:   " + rpcCall.connection.user.getUserName() + " | " +
+            "\nconnection.channel:      " + rpcCall.connection.channel.toString() + " | " +
+            "\nconnection.hostAddress:  " + rpcCall.connection.hostAddress + " | " +
+            "\nconnection.hostname:     " + rpcCall.connection.hostName);
+      }
       // If rpc scheduler indicates back off based on performance degradation
       // such as response time or rpc queue is full, we will ask the client
       // to back off by throwing RetriableException. Whether the client will
@@ -3012,6 +3027,21 @@ public abstract class Server {
 
         try {
           call = callQueue.take(); // pop the queue; maybe blocked here
+          if (callQueue.size() > 0 && call instanceof RpcCall) {
+            RpcCall rpcCall = (RpcCall) call;
+            LOG.info("xbis: " +
+                "\n===== Get call from queue ===== Thread: " + Thread.currentThread().getName() +
+                "\nqueue size:              " + callQueue.size() + " | " +
+                "\nremainingCapacity:       " + callQueue.remainingCapacity() + " | " +
+                "\nqueue callId:            " + call.callId + " | " +
+                "\ncallerContext:           " + call.getCallerContext().getContext() + " | " +
+                "\npriority:                " + call.priorityLevel + " | " +
+                "\nrpcCall.remoteUser:      " + rpcCall.getRemoteUser().getUserName() + " | " +
+                "\nconnection.remoteUser:   " + rpcCall.connection.user.getUserName() + " | " +
+                "\nconnection.channel:      " + rpcCall.connection.channel.toString() + " | " +
+                "\nconnection.hostAddress:  " + rpcCall.connection.hostAddress + " | " +
+                "\nconnection.hostname:     " + rpcCall.connection.hostName);
+          }
           startTimeNanos = Time.monotonicNowNanos();
           if (alignmentContext != null && call.isCallCoordinated() &&
               call.getClientStateId() > alignmentContext.getLastSeenStateId()) {
@@ -3028,6 +3058,7 @@ public abstract class Server {
              * commutative.
              */
             // Re-queue the call and continue
+            LOG.info("xbis: requeue call: " + call.callId);
             requeueCall(call);
             call = null;
             continue;
