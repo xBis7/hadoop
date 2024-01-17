@@ -432,13 +432,3 @@ export HADOOP_OS_TYPE=${HADOOP_OS_TYPE:-$(uname -s)}
 # By default, Hadoop uses jsvc which needs to know to launch a
 # server jvm.
 # export HADOOP_REGISTRYDNS_SECURE_EXTRA_OPTS="-jvm server"
-
-# Point to java 8 home
-export JAVA_HOME="/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home"
-export PATH=${JAVA_HOME}/bin:${PATH}
-
-# Point to the dist SNAPSHOT dir so that it can find the config files under etc/hadoop
-export HADOOP_HOME="/Users/xbis/projects/hadoop/hadoop-dist/target/hadoop-3.4.0-SNAPSHOT"
-export HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
-
-export HADOOP_OPTS="-Djava.net.preferIPv4Stack=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc="
