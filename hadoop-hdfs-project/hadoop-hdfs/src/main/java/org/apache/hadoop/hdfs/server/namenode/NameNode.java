@@ -1843,7 +1843,7 @@ public class NameNode extends ReconfigurableBase implements
 
   public static NameNode createNameNode(String argv[], Configuration conf)
       throws IOException {
-    LOG.info("createNameNode " + Arrays.asList(argv));
+    LOG.info("xbis: createNameNode " + Arrays.asList(argv));
     if (conf == null)
       conf = new HdfsConfiguration();
     // Parse out some generic args into Configuration.

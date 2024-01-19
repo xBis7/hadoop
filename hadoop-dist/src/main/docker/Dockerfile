@@ -13,13 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/hadoop-runner
-WORKDIR /opt
-RUN sudo rm -rf /opt/hadoop
-COPY ./hadoop-3.4.0-SNAPSHOT ./hadoop-3.4.0-SNAPSHOT
-RUN sudo mv hadoop* hadoop && rm -rf /opt/hadoop/share/doc
+FROM apache/hadoop-runner:@docker.hadoop-runner.version@
+
+ADD --chown=hadoop . /opt/hadoop
+
 WORKDIR /opt/hadoop
-ADD log4j.properties /opt/hadoop/etc/hadoop/log4j.properties
-RUN sudo chown -R hadoop:users /opt/*
-#RUN sudo chown -R hadoop:users /opt/hadoop/etc/hadoop/*
-ENV HADOOP_CONF_DIR /opt/hadoop/etc/hadoop

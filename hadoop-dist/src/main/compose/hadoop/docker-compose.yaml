@@ -17,9 +17,11 @@ version: "3.8"
 
 x-common-config:
   &common-config
-  build:
-    context: ../
-    dockerfile: docker/Dockerfile
+  image: ${HADOOP_RUNNER_IMAGE}:${HADOOP_RUNNER_VERSION}
+  volumes:
+    - ../..:/opt/hadoop
+  env_file:
+    - ./config
 
 services:
   namenode:
@@ -28,27 +30,17 @@ services:
     command: ["hdfs", "namenode"]
     ports:
       - 9870:9870
-    env_file:
-      - ./config
     environment:
       ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
   datanode:
     <<: *common-config
     command: ["hdfs", "datanode"]
-    env_file:
-      - ./config
   resourcemanager:
     <<: *common-config
     hostname: resourcemanager
     command: ["yarn", "resourcemanager"]
     ports:
       - 8088:8088
-    env_file:
-      - ./config
-    volumes:
-      - ./test.sh:/opt/test.sh
   nodemanager:
     <<: *common-config
     command: ["yarn", "nodemanager"]
-    env_file:
-      - ./config
