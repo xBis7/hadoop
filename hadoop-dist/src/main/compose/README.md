@@ -4,12 +4,12 @@ This directory contains Docker Compose definitions for running the current versi
 
 This is meant for testing code changes locally and debugging.
 
-The Docker setup is built as part of the maven lifecycle. 
+The image used by the Docker setup is built as part of the maven lifecycle.
 
 In order to start the docker environment you need to do the following 
 * Build the project, which will also build the docker image
   * ```shell
-    >   mvn clean install -Dmaven.javadoc.skip=true -DskipTests -DskipShade -Pdist,src
+    > mvn clean install -Dmaven.javadoc.skip=true -DskipTests -DskipShade -Pdist,src
     ```
 * From the project root, navigate under the docker-compose dir under the generated dist directory
   * ```shell
@@ -25,7 +25,7 @@ In order to start the docker environment you need to do the following
     bash-4.2$ hdfs dfs -mkdir /test
     ```
 
-### Config
+### Config files
 
 To add or remove properties from the `core-site.xml`, `hdfs-site.xml`, etc. files used in the docker environment,
 simply edit the `config` file before starting the containers. The changes will be persisted in the docker environment.
