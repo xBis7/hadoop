@@ -22,6 +22,8 @@ x-common-config:
     - ../..:/opt/hadoop
   env_file:
     - ./config
+  networks:
+    - hadoop-network
 
 services:
   namenode:
@@ -44,3 +46,7 @@ services:
   nodemanager:
     <<: *common-config
     command: ["yarn", "nodemanager"]
+
+networks:
+  hadoop-network:
+    driver: bridge
