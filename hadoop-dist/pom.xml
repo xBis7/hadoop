@@ -161,42 +161,8 @@
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <executions>
-
-<!--          <execution>-->
-<!--            <id>copy-compose-files</id>-->
-<!--            <phase>compile</phase>-->
-<!--            <goals>-->
-<!--              <goal>copy-resources</goal>-->
-<!--            </goals>-->
-<!--            <configuration>-->
-<!--              <outputDirectory>${basedir}/target/compose</outputDirectory>-->
-<!--              <resources>-->
-<!--                <resource>-->
-<!--                  <directory>src/main/compose</directory>-->
-<!--                  <filtering>true</filtering>-->
-<!--                </resource>-->
-<!--              </resources>-->
-<!--            </configuration>-->
-<!--          </execution>-->
-<!--          <execution>-->
-<!--            <id>copy-and-filter-dockerfile</id>-->
-<!--            <phase>compile</phase>-->
-<!--            <goals>-->
-<!--              <goal>copy-resources</goal>-->
-<!--            </goals>-->
-<!--            <configuration>-->
-<!--              <outputDirectory>${project.build.directory}</outputDirectory>-->
-<!--              <resources>-->
-<!--                <resource>-->
-<!--                  <directory>src/main/docker</directory>-->
-<!--                  <filtering>true</filtering>-->
-<!--                </resource>-->
-<!--              </resources>-->
-<!--            </configuration>-->
-<!--          </execution>-->
-
           <execution>
-            <id>copy-compose-files-to-dist</id>
+            <id>copy-compose-files</id>
             <phase>package</phase>
             <goals>
               <goal>copy-resources</goal>
@@ -212,7 +178,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>copy-and-filter-dockerfile-to-dist</id>
+            <id>copy-and-filter-dockerfile</id>
             <phase>package</phase>
             <goals>
               <goal>copy-resources</goal>
@@ -227,7 +193,6 @@
               </resources>
             </configuration>
           </execution>
-
         </executions>
       </plugin>
     </plugins>
