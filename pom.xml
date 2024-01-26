@@ -82,6 +82,8 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     <!-- required as child projects with different version can't use ${project.version} -->
     <hadoop.version>3.3.6</hadoop.version>
 
+    <docker.image>apache/hadoop:${project.version}</docker.image>
+
     <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
     <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
     <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
@@ -117,6 +119,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     <spotbugs.version>4.2.2</spotbugs.version>
     <spotbugs-maven-plugin.version>4.2.0</spotbugs-maven-plugin.version>
     <cyclonedx.version>2.7.6</cyclonedx.version>
+    <docker-maven-plugin.version>0.29.0</docker-maven-plugin.version>
 
     <shell-executable>bash</shell-executable>
 
@@ -147,6 +150,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>${maven-dependency-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>io.fabric8</groupId>
+          <artifactId>docker-maven-plugin</artifactId>
+          <version>${docker-maven-plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -771,5 +779,11 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
       </activation>
     </profile>
 
+    <profile>
+      <id>docker-build</id>
+      <properties>
+        <docker.image>${user.name}/hadoop:${project.version}</docker.image>
+      </properties>
+    </profile>
   </profiles>
 </project>
