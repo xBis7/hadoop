@@ -18,9 +18,10 @@ version: "3.8"
 x-common-config:
   &common-config
   environment:
-    - HADOOP_CLASSPATH=$HADOOP_CLASSPATH:/opt/hadoop/share/hadoop/hdfs/lib/*
+    - HDFS-SITE.XML_dfs.permissions=true
     - HDFS-SITE.XML_dfs.permissions.enabled=true
     - HDFS-SITE.XML_dfs.namenode.acls.enabled=true
+    - HDFS-SITE.XML_dfs.permissions.ContentSummary.subAccess=true
     - HDFS-SITE.XML_dfs.namenode.inode.attributes.provider.class=org.apache.ranger.authorization.hadoop.RangerHdfsAuthorizer
   networks:
     - ranger-net
