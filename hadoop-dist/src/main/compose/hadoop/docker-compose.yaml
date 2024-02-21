@@ -23,7 +23,7 @@ x-common-config:
   env_file:
     - ./config
   networks:
-    - hadoop-network
+    - shared-network
 
 services:
   namenode:
@@ -48,5 +48,5 @@ services:
     command: ["yarn", "nodemanager"]
 
 networks:
-  hadoop-network:
-    driver: bridge
+  shared-network:
+    external: true
