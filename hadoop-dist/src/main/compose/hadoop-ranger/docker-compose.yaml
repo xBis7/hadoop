@@ -17,6 +17,11 @@ version: "3.8"
 
 x-common-config:
   &common-config
+  image: ${HADOOP_RUNNER_IMAGE}:${HADOOP_RUNNER_VERSION}
+  volumes:
+    - ../..:/opt/hadoop
+  env_file:
+    - ./config
   environment:
     - HDFS-SITE.XML_dfs.permissions=true
     - HDFS-SITE.XML_dfs.permissions.enabled=true
@@ -25,18 +30,34 @@ x-common-config:
     - HDFS-SITE.XML_dfs.namenode.inode.attributes.provider.class=org.apache.ranger.authorization.hadoop.RangerHdfsAuthorizer
   networks:
     - ranger-net
+    - hadoop-net
 
 services:
   namenode:
     <<: *common-config
+    hostname: namenode
+    command: ["hdfs", "namenode"]
+    ports:
+      - 9870:9870
+    environment:
+      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
   datanode:
     <<: *common-config
+    command: ["hdfs", "datanode"]
   resourcemanager:
     <<: *common-config
+    hostname: resourcemanager
+    command: ["yarn", "resourcemanager"]
+    ports:
+      - 8088:8088
   nodemanager:
     <<: *common-config
+    command: ["yarn", "nodemanager"]
 
 networks:
   ranger-net:
     name: rangernw
     external: true
+  hadoop-net:
+    name: hadoopnw
+    driver: bridge
