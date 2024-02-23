@@ -20,6 +20,7 @@ x-common-config:
   image: ${HADOOP_RUNNER_IMAGE}:${HADOOP_RUNNER_VERSION}
   volumes:
     - ../..:/opt/hadoop
+    - ./ranger:/etc/ranger
   env_file:
     - ./config
   environment:
