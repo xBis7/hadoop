@@ -30,7 +30,6 @@ x-common-config:
     - HDFS-SITE.XML_dfs.namenode.inode.attributes.provider.class=org.apache.ranger.authorization.hadoop.RangerHdfsAuthorizer
   networks:
     - ranger-net
-    - hadoop-net
 
 services:
   namenode:
@@ -58,6 +57,3 @@ networks:
   ranger-net:
     name: rangernw
     external: true
-  hadoop-net:
-    name: hadoopnw
-    driver: bridge
