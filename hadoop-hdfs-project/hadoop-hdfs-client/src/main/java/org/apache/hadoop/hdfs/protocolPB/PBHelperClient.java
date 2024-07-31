@@ -345,8 +345,8 @@ public class PBHelperClient {
 
   public static TokenProto convert(Token<?> tok) {
     TokenProto.Builder builder = TokenProto.newBuilder().
-        setIdentifier(getByteString(tok.getIdentifier())).
-        setPassword(getByteString(tok.getPassword())).
+        setIdentifier(CommonPBHelper.getByteString(tok.getIdentifier())).
+        setPassword(CommonPBHelper.getByteString(tok.getPassword())).
         setKindBytes(getFixedByteString(tok.getKind())).
         setServiceBytes(getFixedByteString(tok.getService()));
     return builder.build();

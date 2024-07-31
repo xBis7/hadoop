@@ -19,6 +19,7 @@
 package org.apache.hadoop.ipc;
 
 import static org.apache.hadoop.ipc.ProcessingDetails.Timing;
+import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES;
 import static org.apache.hadoop.ipc.RpcConstants.AUTHORIZATION_FAILED_CALL_ID;
 import static org.apache.hadoop.ipc.RpcConstants.CONNECTION_CONTEXT_CALL_ID;
 import static org.apache.hadoop.ipc.RpcConstants.CURRENT_VERSION;
@@ -1827,6 +1828,7 @@ public abstract class Server {
     String protocolName;
     SaslServer saslServer;
     private String establishedQOP;
+    private SaslCryptoCodec saslCodec;
     private AuthMethod authMethod;
     private AuthProtocol authProtocol;
     private boolean saslContextEstablished;
