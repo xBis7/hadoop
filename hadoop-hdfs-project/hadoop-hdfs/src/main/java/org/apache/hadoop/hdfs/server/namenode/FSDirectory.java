@@ -61,6 +61,7 @@ import org.apache.hadoop.hdfs.server.namenode.INode.BlocksMapUpdateInfo.UpdatedR
 import org.apache.hadoop.hdfs.util.ByteArray;
 import org.apache.hadoop.hdfs.util.EnumCounters;
 import org.apache.hadoop.hdfs.util.ReadOnlyList;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Time;
@@ -1417,7 +1418,7 @@ public class FSDirectory implements Closeable {
       final HdfsProtos.ZoneEncryptionInfoProto ezProto =
           HdfsProtos.ZoneEncryptionInfoProto.parseFrom(xattr.getValue());
       ezManager.unprotectedAddEncryptionZone(inode.getId(),
-          PBHelperClient.convert(ezProto.getSuite()),
+          CommonPBHelper.convert(ezProto.getSuite()),
           PBHelperClient.convert(ezProto.getCryptoProtocolVersion()),
           ezProto.getKeyName());
       if (ezProto.hasReencryptionProto()) {

@@ -626,8 +626,14 @@ public class CommonConfigurationKeysPublic {
    * <a href="{@docRoot}/../hadoop-project-dist/hadoop-common/core-default.xml">
    * core-default.xml</a>
    */
-  public static final String  HADOOP_RPC_PROTECTION =
-    "hadoop.rpc.protection";
+  public static final String HADOOP_RPC_PROTECTION = "hadoop.rpc.protection";
+  public static final String HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES =
+      "hadoop.rpc.security.crypto.cipher.suites";
+  public static final String
+      HADOOP_RPC_SECURITY_CRYPTO_CIPHER_KEY_BITLENGTH_KEY =
+      "hadoop.rpc.security.crypto.cipher.key.bitlength";
+  public static final int
+      HADOOP_RPC_SECURITY_CRYPTO_CIPHER_KEY_BITLENGTH_DEFAULT = 128;
   /** Class to override Sasl Properties for a connection */
   public static final String  HADOOP_SECURITY_SASL_PROPS_RESOLVER_CLASS =
     "hadoop.security.saslproperties.resolver.class";

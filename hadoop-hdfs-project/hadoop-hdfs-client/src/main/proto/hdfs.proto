@@ -284,14 +284,6 @@ message DataEncryptionKeyProto {
 }
 
 /**
- * Cipher suite.
- */
-enum CipherSuiteProto {
-    UNKNOWN = 1;
-    AES_CTR_NOPADDING = 2;
-}
-
-/**
  * Crypto protocol version used to access encrypted files.
  */
 enum CryptoProtocolVersionProto {
@@ -303,7 +295,7 @@ enum CryptoProtocolVersionProto {
  * Encryption information for a file.
  */
 message FileEncryptionInfoProto {
-  required CipherSuiteProto suite = 1;
+  required hadoop.common.CipherSuiteProto suite = 1;
   required CryptoProtocolVersionProto cryptoProtocolVersion = 2;
   required bytes key = 3;
   required bytes iv = 4;
@@ -326,7 +318,7 @@ message PerFileEncryptionInfoProto {
  * zone
  */
 message ZoneEncryptionInfoProto {
-  required CipherSuiteProto suite = 1;
+  required hadoop.common.CipherSuiteProto suite = 1;
   required CryptoProtocolVersionProto cryptoProtocolVersion = 2;
   required string keyName = 3;
   optional ReencryptionInfoProto reencryptionProto = 4;
@@ -343,17 +335,6 @@ message ReencryptionInfoProto {
   required int64 numFailures = 5;
   optional uint64 completionTime = 6;
   optional string lastFile = 7;
-}
-
-/**
- * Cipher option
- */
-message CipherOptionProto {
-  required CipherSuiteProto suite = 1;
-  optional bytes inKey = 2;
-  optional bytes inIv = 3;
-  optional bytes outKey = 4;
-  optional bytes outIv = 5;
 }
 
 /**

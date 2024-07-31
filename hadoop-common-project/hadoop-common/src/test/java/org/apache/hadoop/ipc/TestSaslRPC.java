@@ -57,6 +57,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedExceptionAction;
@@ -787,6 +788,89 @@ public class TestSaslRPC extends TestRpcBase {
     }
   }
 
+  // HADOOP-10768: Only create AES SASL codec in PRIVACY. For PRIVACY, it
+  // would fail.
+  @Test
+  public void testSaslErrorCipher() throws Exception {
+    conf.set(CommonConfigurationKeys.HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES,
+        "AES/CTR/ErrorPadding");
+    SecurityUtil.setAuthenticationMethod(
+        AuthenticationMethod.TOKEN, conf);
+    UserGroupInformation.setConfiguration(conf);
+    TestTokenSecretManager sm = new TestTokenSecretManager();
+    Server server = setupTestServer(conf, 1, sm);
+    try {
+      final InetSocketAddress addr = NetUtils.getConnectAddress(server);
+      final UserGroupInformation clientUgi =
+          UserGroupInformation.createRemoteUser("client");
+      clientUgi.setAuthenticationMethod(AuthenticationMethod.TOKEN);
+
+      TestTokenIdentifier tokenId = new TestTokenIdentifier(
+          new Text(clientUgi.getUserName()));
+      Token<?> token = new Token<>(tokenId, sm);
+      SecurityUtil.setTokenService(token, addr);
+      clientUgi.addToken(token);
+      clientUgi.doAs(new PrivilegedExceptionAction<Void>() {
+        @Override
+        public Void run() throws Exception {
+          final TestRpcService proxy = getClient(addr, conf);
+          try {
+            proxy.ping(null, newEmptyRequest());
+            if (expectedQop.equals(QualityOfProtection.PRIVACY)) {
+              Assert.fail("PRIVACY Should failed here");
+            }
+            return null;
+          } finally {
+            RPC.stopProxy(proxy);
+          }
+        }
+      });
+    } catch (UndeclaredThrowableException e) {
+      if (expectedQop.equals(QualityOfProtection.PRIVACY) && !(e
+          .getUndeclaredThrowable() instanceof ServiceException)) {
+        throw new Exception(e.getUndeclaredThrowable());
+      }
+    } finally {
+      server.stop();
+    }
+  }
+
+  @Test
+  public void testSaslWithAesCipher() throws Exception {
+    conf.set(CommonConfigurationKeys.HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES,
+        "AES/CTR/NoPadding");
+    SecurityUtil.setAuthenticationMethod(
+        AuthenticationMethod.TOKEN, conf);
+    UserGroupInformation.setConfiguration(conf);
+    TestTokenSecretManager sm = new TestTokenSecretManager();
+    Server server = setupTestServer(conf, 1, sm);
+    try {
+      final InetSocketAddress addr = NetUtils.getConnectAddress(server);
+      final UserGroupInformation clientUgi =
+          UserGroupInformation.createRemoteUser("client");
+      clientUgi.setAuthenticationMethod(AuthenticationMethod.TOKEN);
+
+      TestTokenIdentifier tokenId = new TestTokenIdentifier(
+          new Text(clientUgi.getUserName()));
+      Token<?> token = new Token<>(tokenId, sm);
+      SecurityUtil.setTokenService(token, addr);
+      clientUgi.addToken(token);
+      clientUgi.doAs(new PrivilegedExceptionAction<Void>() {
+        @Override
+        public Void run() throws Exception {
+          final TestRpcService proxy = getClient(addr, conf);
+          try {
+            proxy.ping(null, newEmptyRequest());
+            return null;
+          } finally {
+            RPC.stopProxy(proxy);
+          }
+        }
+      });
+    } finally {
+      server.stop();
+    }
+  }
 
   // test helpers
 

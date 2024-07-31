@@ -229,6 +229,7 @@ import org.apache.hadoop.ipc.ProtocolMetaInterface;
 import org.apache.hadoop.ipc.ProtocolTranslator;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RpcClientUtil;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.proto.SecurityProtos.CancelDelegationTokenRequestProto;
 import org.apache.hadoop.security.proto.SecurityProtos.GetDelegationTokenRequestProto;
 import org.apache.hadoop.security.proto.SecurityProtos.GetDelegationTokenResponseProto;
@@ -1259,7 +1260,7 @@ public class ClientNamenodeProtocolTranslatorPB implements
             .setSnapshotRoot(snapshotRoot).setFromSnapshot(fromSnapshot)
             .setToSnapshot(toSnapshot).setCursor(
             HdfsProtos.SnapshotDiffReportCursorProto.newBuilder()
-                .setStartPath(PBHelperClient.getByteString(startPath))
+                .setStartPath(CommonPBHelper.getByteString(startPath))
                 .setIndex(index).build()).build();
     try {
       GetSnapshotDiffReportListingResponseProto result =
