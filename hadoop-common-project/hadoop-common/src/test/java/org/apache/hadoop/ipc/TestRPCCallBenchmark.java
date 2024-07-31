@@ -29,12 +29,16 @@ public class TestRPCCallBenchmark {
   public void testBenchmarkWithProto() throws Exception {
     int rc = ToolRunner.run(new RPCCallBenchmark(),
         new String[] {
-      "--clientThreads", "30",
-      "--serverThreads", "30",
-      "--time", "5",
-      "--serverReaderThreads", "4",
-      "--messageSize", "1024",
-      "--engine", "protobuf"});
+          "--clientThreads", "30",
+          "--serverThreads", "30",
+          "--warmup", "0",
+          "--time", "5",
+          "--serverReaderThreads", "4",
+          "--messageSize", "1024",
+          "--engine", "protobuf",
+          "--sasl",
+          "--qop", "PRIVACY",
+          "--cipher", "AES/CTR/NoPadding"});
     assertEquals(0, rc);
   }
 }

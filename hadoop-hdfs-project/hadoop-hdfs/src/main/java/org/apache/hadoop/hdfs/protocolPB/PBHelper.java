@@ -120,6 +120,7 @@ import org.apache.hadoop.hdfs.server.protocol.RemoteEditLogManifest;
 import org.apache.hadoop.hdfs.server.protocol.SlowDiskReports;
 import org.apache.hadoop.hdfs.server.protocol.SlowPeerReports;
 import org.apache.hadoop.hdfs.server.protocol.VolumeFailureSummary;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 
 /**
  * Utilities for converting protobuf classes to and from implementation classes
@@ -197,7 +198,7 @@ public class PBHelper {
         .addAllStorageTypes(PBHelperClient.convertStorageTypes(blk.getStorageTypes()));
     if (blk instanceof StripedBlockWithLocations) {
       StripedBlockWithLocations sblk = (StripedBlockWithLocations) blk;
-      builder.setIndices(PBHelperClient.getByteString(sblk.getIndices()));
+      builder.setIndices(CommonPBHelper.getByteString(sblk.getIndices()));
       builder.setDataBlockNum(sblk.getDataBlockNum());
       builder.setCellSize(sblk.getCellSize());
     }
@@ -241,7 +242,7 @@ public class PBHelper {
 
   public static BlockKeyProto convert(BlockKey key) {
     byte[] encodedKey = key.getEncodedKey();
-    ByteString keyBytes = PBHelperClient.getByteString(encodedKey == null ?
+    ByteString keyBytes = CommonPBHelper.getByteString(encodedKey == null ?
         DFSUtilClient.EMPTY_BYTES : encodedKey);
     return BlockKeyProto.newBuilder().setKeyId(key.getKeyId())
         .setKeyBytes(keyBytes).setExpiryDate(key.getExpiryDate()).build();
@@ -378,7 +379,8 @@ public class PBHelper {
       RecoveringStripedBlock sb = (RecoveringStripedBlock) b;
       builder.setEcPolicy(PBHelperClient.convertErasureCodingPolicy(
           sb.getErasureCodingPolicy()));
-      builder.setBlockIndices(PBHelperClient.getByteString(sb.getBlockIndices()));
+      builder.setBlockIndices(CommonPBHelper.getByteString(
+          sb.getBlockIndices()));
     }
     return builder.build();
   }
@@ -1069,7 +1071,7 @@ public class PBHelper {
     builder.setTargetStorageTypes(convertStorageTypesProto(targetStorageTypes));
 
     byte[] liveBlockIndices = blockEcRecoveryInfo.getLiveBlockIndices();
-    builder.setLiveBlockIndices(PBHelperClient.getByteString(liveBlockIndices));
+    builder.setLiveBlockIndices(CommonPBHelper.getByteString(liveBlockIndices));
 
     builder.setEcPolicy(PBHelperClient.convertErasureCodingPolicy(
         blockEcRecoveryInfo.getErasureCodingPolicy()));

@@ -78,6 +78,7 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configuration.IntegerRanges;
+import org.apache.hadoop.crypto.CipherOption;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.io.IOUtils;
@@ -98,10 +99,13 @@ import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcSaslProto;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcSaslProto.SaslAuth;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcSaslProto.SaslState;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.AccessControlException;
+import org.apache.hadoop.security.SaslCryptoCodec;
 import org.apache.hadoop.security.SaslPropertiesResolver;
 import org.apache.hadoop.security.SaslRpcServer;
 import org.apache.hadoop.security.SaslRpcServer.AuthMethod;
+import org.apache.hadoop.security.SaslUtil;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod;
@@ -109,6 +113,7 @@ import org.apache.hadoop.security.authorize.AuthorizationException;
 import org.apache.hadoop.security.authorize.PolicyProvider;
 import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hadoop.security.authorize.ServiceAuthorizationManager;
+import org.apache.hadoop.security.proto.SecurityProtos.CipherOptionProto;
 import org.apache.hadoop.security.token.SecretManager;
 import org.apache.hadoop.security.token.SecretManager.InvalidToken;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -122,6 +127,7 @@ import org.apache.htrace.core.Tracer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.Message;
@@ -2147,7 +2153,7 @@ public abstract class Server {
     }
 
     private RpcSaslProto processSaslToken(RpcSaslProto saslMessage)
-        throws SaslException {
+        throws SaslException, IOException {
       if (!saslMessage.hasToken()) {
         throw new SaslException("Client did not send a token");
       }
@@ -2159,7 +2165,44 @@ public abstract class Server {
       saslToken = saslServer.evaluateResponse(saslToken);
       return buildSaslResponse(
           saslServer.isComplete() ? SaslState.SUCCESS : SaslState.CHALLENGE,
-          saslToken);
+          saslToken, getCipherOption(saslMessage.getCipherOptionList()));
+    }
+
+    private CipherOption getCipherOption(List<CipherOptionProto>
+                                              optionProtos) throws IOException {
+      List<CipherOption> cipherOptions = Lists.newArrayList();
+      if (optionProtos != null) {
+        for (CipherOptionProto optionProto : optionProtos) {
+          cipherOptions.add(CommonPBHelper.convert(optionProto));
+        }
+      }
+      CipherOption cipherOption = null;
+      if (saslServer.isComplete() &&
+          SaslUtil.isNegotiatedQopPrivacy(saslServer)) {
+        // Negotiate a cipher option
+        cipherOption = SaslUtil.negotiateCipherOption(conf, cipherOptions);
+        if (LOG.isDebugEnabled()) {
+          if (cipherOption == null) {
+            // No cipher suite is negotiated
+            String cipherSuites =
+                conf.get(HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES);
+            if (cipherSuites != null && !cipherSuites.isEmpty()) {
+              // the server accepts some cipher suites, but the client does not.
+              LOG.debug("Server accepts cipher suites " + cipherSuites
+                  + ", but client " + hostAddress + " does not accept any "
+                  + "of them");
+            }
+          } else {
+            LOG.debug("Server using cipher suite "
+                + cipherOption.getCipherSuite().getName()
+                + " with client " + hostAddress);
+          }
+        }
+      }
+      if (cipherOption != null) {
+        saslCodec = new SaslCryptoCodec(conf, cipherOption, true);
+      }
+      return SaslUtil.wrap(cipherOption, saslServer);
     }
 
     private void switchToSimple() {
@@ -2168,7 +2211,8 @@ public abstract class Server {
       disposeSasl();
     }
 
-    private RpcSaslProto buildSaslResponse(SaslState state, byte[] replyToken) {
+    private RpcSaslProto buildSaslResponse(SaslState state, byte[] replyToken,
+        CipherOption cipherOption) {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Will send " + state + " token of size "
             + ((replyToken != null) ? replyToken.length : null)
@@ -2178,6 +2222,9 @@ public abstract class Server {
       response.setState(state);
       if (replyToken != null) {
         response.setToken(ByteString.copyFrom(replyToken));
+      }
+      if (cipherOption != null) {
+        response.addCipherOption(CommonPBHelper.convert(cipherOption));
       }
       return response.build();
     }
@@ -2500,7 +2547,11 @@ public abstract class Server {
         LOG.debug("Have read input token of size " + inBuf.length
             + " for processing by saslServer.unwrap()");
       }
-      inBuf = saslServer.unwrap(inBuf, 0, inBuf.length);
+      if (saslCodec != null) {
+        inBuf = saslCodec.unwrap(inBuf, 0, inBuf.length);
+      } else {
+        inBuf = saslServer.unwrap(inBuf, 0, inBuf.length);
+      }
       ReadableByteChannel ch = Channels.newChannel(new ByteArrayInputStream(
           inBuf));
       // Read all RPCs contained in the inBuf, even partial ones
@@ -3352,7 +3403,11 @@ public abstract class Server {
       // synchronization may be needed since there can be multiple Handler
       // threads using saslServer to wrap responses.
       synchronized (call.connection.saslServer) {
-        token = call.connection.saslServer.wrap(token, 0, token.length);
+        if (call.connection.saslCodec != null) {
+          token = call.connection.saslCodec.wrap(token, 0, token.length);
+        } else {
+          token = call.connection.saslServer.wrap(token, 0, token.length);
+        }
       }
       if (LOG.isDebugEnabled())
         LOG.debug("Adding saslServer wrapped token of size " + token.length

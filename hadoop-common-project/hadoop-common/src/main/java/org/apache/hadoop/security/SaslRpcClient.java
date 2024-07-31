@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.security;
 
+import static org.apache.hadoop.fs.CommonConfigurationKeys.HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -32,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -42,12 +43,13 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.crypto.CipherOption;
 import org.apache.hadoop.fs.GlobPattern;
 import org.apache.hadoop.ipc.Client.IpcStreams;
 import org.apache.hadoop.ipc.RPC.RpcKind;
@@ -62,8 +64,10 @@ import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcSaslProto;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcSaslProto.SaslAuth;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcSaslProto.SaslState;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.SaslRpcServer.AuthMethod;
 import org.apache.hadoop.security.authentication.util.KerberosName;
+import org.apache.hadoop.security.proto.SecurityProtos;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.security.token.TokenInfo;
@@ -93,6 +97,7 @@ public class SaslRpcClient {
   private SaslClient saslClient;
   private SaslPropertiesResolver saslPropsResolver;
   private AuthMethod authMethod;
+  private SaslCryptoCodec saslCodec;
   
   private static final RpcRequestHeaderProto saslHeader = ProtoUtil
       .makeRpcRequestHeader(RpcKind.RPC_PROTOCOL_BUFFER,
@@ -408,7 +413,20 @@ public class SaslRpcClient {
                 ? saslClient.evaluateChallenge(challengeToken)
                     : new byte[0];
           }
-          response = createSaslReply(SaslState.INITIATE, responseToken);
+          List<CipherOption> cipherOptions = null;
+          if (authMethod == AuthMethod.TOKEN) {
+            cipherOptions = SaslUtil.getCipherOptions(conf);
+            if (LOG.isDebugEnabled()) {
+              if (cipherOptions != null) {
+                LOG.debug(
+                    "Get SASL RPC CipherOption from Conf" + cipherOptions);
+              } else {
+                LOG.debug("No CipherOption for SASL");
+              }
+            }
+          }
+          response =
+              createSaslReply(SaslState.INITIATE, responseToken, cipherOptions);
           response.addAuths(saslAuthType);
           break;
         }
@@ -419,7 +437,13 @@ public class SaslRpcClient {
             throw new SaslException("Server sent unsolicited challenge");
           }
           byte[] responseToken = saslEvaluateToken(saslMessage, false);
-          response = createSaslReply(SaslState.RESPONSE, responseToken);
+          List<CipherOption> cipherOptions = null;
+          if (SaslUtil.requestedQopContainsPrivacy(
+              saslPropsResolver.getClientProperties(serverAddr.getAddress()))) {
+            cipherOptions = SaslUtil.getCipherOptions(conf);
+          }
+          response =
+              createSaslReply(SaslState.RESPONSE, responseToken, cipherOptions);
           break;
         }
         case SUCCESS: {
@@ -491,15 +515,57 @@ public class SaslRpcClient {
         throw new SaslException("Client generated spurious response");        
       }
     }
+    handleSaslCipherOptions(saslResponse.getCipherOptionList());
     return saslToken;
   }
 
+  private void handleSaslCipherOptions(List<SecurityProtos.CipherOptionProto>
+                                   optionProtos) throws SaslException {
+    CipherOption cipherOption = null;
+    List<CipherOption> options = CommonPBHelper
+        .convertCipherOptionProtos(optionProtos);
+    CipherOption option = null;
+    if (options != null && !options.isEmpty()) {
+      option = options.get(0);
+    }
+    if (saslClient.isComplete() && SaslUtil
+        .isNegotiatedQopPrivacy(saslClient)) {
+      // Unwrap the negotiated cipher option
+      cipherOption = SaslUtil.unwrap(option, saslClient);
+      if (LOG.isDebugEnabled()) {
+        if (cipherOption == null) {
+          // No cipher suite is negotiated
+          String cipherSuites =
+              conf.get(HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES);
+          if (cipherSuites != null && !cipherSuites.isEmpty()) {
+            // the client accepts some cipher suites, but the server does not.
+            LOG.debug("Client accepts cipher suites " + cipherSuites + ", "
+                + "but server does not accept any of them");
+          }
+        } else {
+          LOG.debug("Client using cipher suite "
+              + cipherOption.getCipherSuite().getName() + " with server");
+        }
+      }
+    }
+    if (cipherOption != null) {
+      try {
+        saslCodec = new SaslCryptoCodec(conf, cipherOption, false);
+      } catch (IOException e) {
+        throw new SaslException(e.getMessage(), e);
+      }
+    }
+  }
+
   private RpcSaslProto.Builder createSaslReply(SaslState state,
-                                               byte[] responseToken) {
+      byte[] responseToken, List<CipherOption> options) {
     RpcSaslProto.Builder response = RpcSaslProto.newBuilder();
     response.setState(state);
     if (responseToken != null) {
       response.setToken(ByteString.copyFrom(responseToken));
+    }
+    if (options != null) {
+      response.addAllCipherOption(CommonPBHelper.convertCipherOptions(options));
     }
     return response;
   }
@@ -608,7 +674,11 @@ public class SaslRpcClient {
           if (LOG.isDebugEnabled()) {
             LOG.debug("unwrapping token of length:" + token.length);
           }
-          token = saslClient.unwrap(token, 0, token.length);
+          if (saslCodec != null) {
+            token = saslCodec.unwrap(token, 0, token.length);
+          } else {
+            token = saslClient.unwrap(token, 0, token.length);
+          }
           unwrappedRpcBuffer = ByteBuffer.wrap(token);
         }
       }
@@ -627,7 +697,11 @@ public class SaslRpcClient {
       if (LOG.isDebugEnabled()) {
         LOG.debug("wrapping token of length:" + len);
       }
-      buf = saslClient.wrap(buf, off, len);
+      if (saslCodec != null) {
+        buf = saslCodec.wrap(buf, off, len);
+      } else {
+        buf = saslClient.wrap(buf, off, len);
+      }
       RpcSaslProto saslMessage = RpcSaslProto.newBuilder()
           .setState(SaslState.WRAP)
           .setToken(ByteString.copyFrom(buf, 0, buf.length))

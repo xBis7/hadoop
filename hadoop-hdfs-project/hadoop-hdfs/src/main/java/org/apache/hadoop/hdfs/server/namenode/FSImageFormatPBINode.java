@@ -69,6 +69,7 @@ import org.apache.hadoop.hdfs.util.ReadOnlyList;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 
 @InterfaceAudience.Private
 public final class FSImageFormatPBINode {
@@ -431,7 +432,8 @@ public final class FSImageFormatPBINode {
         int v = XAttrFormat.toInt(a);
         xAttrCompactBuilder.setName(v);
         if (a.getValue() != null) {
-          xAttrCompactBuilder.setValue(PBHelperClient.getByteString(a.getValue()));
+          xAttrCompactBuilder.setValue(CommonPBHelper.getByteString(
+              a.getValue()));
         }
         b.addXAttrs(xAttrCompactBuilder.build());
       }

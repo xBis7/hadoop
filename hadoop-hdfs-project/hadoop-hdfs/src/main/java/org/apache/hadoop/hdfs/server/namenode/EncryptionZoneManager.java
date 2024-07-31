@@ -54,6 +54,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocolPB.PBHelperClient;
 import org.apache.hadoop.hdfs.server.namenode.FSDirectory.DirOp;
 import org.apache.hadoop.hdfs.server.namenode.snapshot.Snapshot;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.AccessControlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -417,7 +418,7 @@ public class EncryptionZoneManager {
             final HdfsProtos.ZoneEncryptionInfoProto ezProto =
                 HdfsProtos.ZoneEncryptionInfoProto.parseFrom(xAttr.getValue());
             return new EncryptionZoneInt(
-                inode.getId(), PBHelperClient.convert(ezProto.getSuite()),
+                inode.getId(), CommonPBHelper.convert(ezProto.getSuite()),
                 PBHelperClient.convert(ezProto.getCryptoProtocolVersion()),
                 ezProto.getKeyName());
           } catch (InvalidProtocolBufferException e) {

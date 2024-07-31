@@ -28,12 +28,15 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.ipc.RPC.Server;
 import org.apache.hadoop.ipc.protobuf.TestProtos.EchoRequestProto;
 import org.apache.hadoop.ipc.protobuf.TestProtos.EchoResponseProto;
 import org.apache.hadoop.ipc.protobuf.TestRpcServiceProtos.TestProtobufRpcProto;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.test.MultithreadedTestUtil;
 import org.apache.hadoop.test.MultithreadedTestUtil.TestContext;
 import org.apache.hadoop.util.Tool;
@@ -55,7 +58,8 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
   private AtomicLong callCount = new AtomicLong(0);
   private static ThreadMXBean threadBean =
     ManagementFactory.getThreadMXBean();
-  
+  private TestTokenSecretManager serverSm = null;
+
   private static class MyOptions {
     private boolean failed = false;
     private int serverThreads = 0;
@@ -64,7 +68,12 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
     private String host = "0.0.0.0";
     private int port = 0;
     public int secondsToRun = 15;
+    private int secondsToWarm = 15;
     private int msgSize = 1024;
+    private boolean sasl = false;
+    private String qop = "PRIVACY";
+    private String cipherMode = "";
+
     public Class<? extends RpcEngine> rpcEngine =
         ProtobufRpcEngine.class;
     
@@ -121,6 +130,11 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
           .withDescription("number of seconds to run clients for")
           .create("t"));
       opts.addOption(
+          OptionBuilder.withLongOpt("warmup").hasArg(true)
+              .withArgName("seconds")
+              .withDescription("number of seconds to warmup run clients")
+              .create("w"));
+      opts.addOption(
           OptionBuilder.withLongOpt("port").hasArg(true)
           .withArgName("port")
           .withDescription("port to listen or connect on")
@@ -136,6 +150,24 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
           .withArgName("protobuf")
           .withDescription("engine to use")
           .create('e'));
+
+      opts.addOption(
+          OptionBuilder.withLongOpt("sasl").hasArg(false)
+              .withArgName("sasl")
+              .withDescription("enable sasl authentication")
+              .create('a'));
+
+      opts.addOption(
+          OptionBuilder.withLongOpt("qop").hasArg(true)
+              .withArgName("qop")
+              .withDescription("RPC QOP level: \"AUTHENTICATION\", "
+                  + "\"INTEGRITY\" or \"PRIVACY\"")
+              .create('q'));
+
+      opts.addOption(
+          OptionBuilder.withLongOpt("cipher").hasArg(true).withArgName("cipher")
+              .withDescription("Custom Cipher for QoP: \"AES/CTR/NoPadding\"")
+              .create('f'));
       
       opts.addOption(
           OptionBuilder.withLongOpt("help").hasArg(false)
@@ -169,6 +201,9 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
       if (line.hasOption('t')) {
         secondsToRun = Integer.parseInt(line.getOptionValue('t'));
       }
+      if (line.hasOption('w')) {
+        secondsToWarm = Integer.parseInt(line.getOptionValue('w'));
+      }
       if (line.hasOption('m')) {
         msgSize = Integer.parseInt(line.getOptionValue('m'));
       }
@@ -186,7 +221,20 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
           throw new ParseException("invalid engine: " + eng);
         }
       }
-      
+      if (line.hasOption('a')) {
+        sasl = line.hasOption('a');
+      }
+      if (!sasl && (line.hasOption('q') || line.hasOption('f'))) {
+        throw new ParseException(
+            "invalid config -q or -f should enable sasl " + " -a ");
+      }
+      if (line.hasOption('q')) {
+        qop = line.getOptionValue('q');
+      }
+      if (line.hasOption('f')) {
+        cipherMode = line.getOptionValue('f');
+      }
+
       String[] remainingArgs = line.getArgs();
       if (remainingArgs.length != 0) {
         throw new ParseException("Extra arguments: " +
@@ -206,10 +254,12 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
 
     @Override
     public String toString() {
+      String saslInfo = sasl ? ("\nqop=" + qop + "\ncipher=" + cipherMode) : "";
       return "rpcEngine=" + rpcEngine + "\nserverThreads=" + serverThreads
           + "\nserverReaderThreads=" + serverReaderThreads + "\nclientThreads="
           + clientThreads + "\nhost=" + host + "\nport=" + getPort()
-          + "\nsecondsToRun=" + secondsToRun + "\nmsgSize=" + msgSize;
+          + "\nsecondsToWarm=" + secondsToWarm + "\nsecondsToRun="
+          + secondsToRun + "\nmsgSize=" + msgSize + "\nsasl=" + sasl + saslInfo;
     }
   }
 
@@ -230,9 +280,14 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
       BlockingService service = TestProtobufRpcProto
           .newReflectiveBlockingService(serverImpl);
 
-      server = new RPC.Builder(conf).setProtocol(TestRpcService.class)
-          .setInstance(service).setBindAddress(opts.host).setPort(opts.getPort())
-          .setNumHandlers(opts.serverThreads).setVerbose(false).build();
+      RPC.Builder builder = new RPC.Builder(conf)
+          .setProtocol(TestRpcService.class).setInstance(service)
+          .setBindAddress(opts.host).setPort(opts.getPort())
+          .setNumHandlers(opts.serverThreads).setVerbose(false);
+      if (opts.sasl && serverSm != null) {
+        builder.setSecretManager(serverSm);
+      }
+      server = builder.build();
     } else {
       throw new RuntimeException("Bad engine: " + opts.rpcEngine);
     }
@@ -255,7 +310,12 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
     if (opts.failed) {
       return -1;
     }
-    
+    if (opts.sasl) {
+      serverSm = new TestTokenSecretManager();
+      conf.set(CommonConfigurationKeys.HADOOP_RPC_PROTECTION, opts.qop);
+      conf.set(CommonConfigurationKeys.HADOOP_RPC_SECURITY_CRYPTO_CIPHER_SUITES,
+          opts.cipherMode);
+    }
     // Set RPC engine to the configured RPC engine
     RPC.setProtocolEngine(conf, TestRpcService.class, opts.rpcEngine);
 
@@ -266,8 +326,17 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
       if (ctx != null) {
         long totalCalls = 0;
         ctx.startThreads();
-        long veryStart = System.nanoTime();
 
+        for (int i = 0; i < opts.secondsToWarm; i++) {
+          long st = System.nanoTime();
+          ctx.waitFor(1000);
+          long et = System.nanoTime();
+          long ct = callCount.getAndSet(0);
+          double callsPerSec = (ct * 1000000000) / (et - st);
+          System.out.println("Warmup Calls per second: " + callsPerSec);
+        }
+
+        long veryStart = System.nanoTime();
         // Loop printing results every second until the specified
         // time has elapsed
         for (int i = 0; i < opts.secondsToRun ; i++) {
@@ -331,14 +400,26 @@ public class RPCCallBenchmark extends TestRpcBase implements Tool {
     int numProxies = opts.clientThreads;
     final RpcServiceWrapper proxies[] = new RpcServiceWrapper[numProxies];
     for (int i = 0; i < numProxies; i++) {
+      UserGroupInformation clientUgi = UserGroupInformation
+          .createUserForTesting("proxy-" + i, new String[]{});
+      if (opts.sasl) {
+        clientUgi.setAuthenticationMethod(
+            UserGroupInformation.AuthenticationMethod.TOKEN);
+        TestTokenIdentifier tokenId =
+            new TestTokenIdentifier(new Text(clientUgi.getUserName()));
+        Token<?> token = new Token<>(tokenId, serverSm);
+        InetSocketAddress addr =
+            NetUtils.createSocketAddr(opts.host, opts.getPort());
+        SecurityUtil.setTokenService(token, addr);
+        clientUgi.addToken(token);
+      }
       proxies[i] =
-        UserGroupInformation.createUserForTesting("proxy-" + i,new String[]{})
-        .doAs(new PrivilegedExceptionAction<RpcServiceWrapper>() {
-          @Override
-          public RpcServiceWrapper run() throws Exception {
-            return createRpcClient(opts);
-          }
-        });
+          clientUgi.doAs(new PrivilegedExceptionAction<RpcServiceWrapper>() {
+            @Override
+            public RpcServiceWrapper run() throws Exception {
+              return createRpcClient(opts);
+            }
+          });
     }
 
     // Create an echo message of the desired length
