@@ -50,6 +50,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos.ZoneEncryptionInfoProto;
 import org.apache.hadoop.hdfs.protocolPB.PBHelperClient;
 import org.apache.hadoop.hdfs.server.namenode.FSDirectory.DirOp;
 import org.apache.hadoop.hdfs.server.namenode.ReencryptionUpdater.FileEdekInfo;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.SecurityUtil;
 
 import org.apache.hadoop.thirdparty.com.google.common.base.Preconditions;
@@ -263,7 +264,7 @@ final class FSDirEncryptionZoneOp {
     final ReencryptionInfoProto newProto = PBHelperClient
         .convert(ezKeyVersionName, Time.now(), false, 0, 0, null, null);
     final ZoneEncryptionInfoProto newZoneProto = PBHelperClient
-        .convert(PBHelperClient.convert(zoneProto.getSuite()),
+        .convert(CommonPBHelper.convert(zoneProto.getSuite()),
             PBHelperClient.convert(zoneProto.getCryptoProtocolVersion()),
             zoneProto.getKeyName(), newProto);
 
@@ -303,7 +304,7 @@ final class FSDirEncryptionZoneOp {
             lastFile);
 
     final ZoneEncryptionInfoProto newZoneProto = PBHelperClient
-        .convert(PBHelperClient.convert(zoneProto.getSuite()),
+        .convert(CommonPBHelper.convert(zoneProto.getSuite()),
             PBHelperClient.convert(zoneProto.getCryptoProtocolVersion()),
             zoneProto.getKeyName(), newProto);
 
@@ -349,7 +350,7 @@ final class FSDirEncryptionZoneOp {
             status.getNumReencryptionFailures(), Time.now(), null);
 
     final ZoneEncryptionInfoProto newZoneProto = PBHelperClient
-        .convert(PBHelperClient.convert(zoneProto.getSuite()),
+        .convert(CommonPBHelper.convert(zoneProto.getSuite()),
             PBHelperClient.convert(zoneProto.getCryptoProtocolVersion()),
             zoneProto.getKeyName(), newRiProto);
 

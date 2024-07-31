@@ -18,6 +18,7 @@
 package org.apache.hadoop.hdfs.server.namenode;
 
 import org.apache.hadoop.hdfs.server.namenode.snapshot.Snapshot;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.util.StringUtils;
 
 import org.apache.hadoop.thirdparty.com.google.common.annotations.VisibleForTesting;
@@ -1514,7 +1515,7 @@ public class FSDirectory implements Closeable {
       final HdfsProtos.ZoneEncryptionInfoProto ezProto =
           HdfsProtos.ZoneEncryptionInfoProto.parseFrom(xattr.getValue());
       ezManager.unprotectedAddEncryptionZone(inode.getId(),
-          PBHelperClient.convert(ezProto.getSuite()),
+          CommonPBHelper.convert(ezProto.getSuite()),
           PBHelperClient.convert(ezProto.getCryptoProtocolVersion()),
           ezProto.getKeyName());
       if (ezProto.hasReencryptionProto()) {

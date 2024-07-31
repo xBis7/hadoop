@@ -37,7 +37,6 @@ import org.apache.hadoop.thirdparty.com.google.common.primitives.Shorts;
 import org.apache.hadoop.thirdparty.protobuf.ByteString;
 import org.apache.hadoop.thirdparty.protobuf.CodedInputStream;
 
-import org.apache.hadoop.crypto.CipherOption;
 import org.apache.hadoop.crypto.CipherSuite;
 import org.apache.hadoop.crypto.CryptoProtocolVersion;
 import org.apache.hadoop.hdfs.AddBlockFlag;
@@ -208,6 +207,7 @@ import org.apache.hadoop.io.EnumSetWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.erasurecode.ECSchema;
 import org.apache.hadoop.ipc.ProtobufHelper;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.proto.SecurityProtos.TokenProto;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.ChunkedArrayList;
@@ -253,11 +253,6 @@ public class PBHelperClient {
 
   private PBHelperClient() {
     /** Hidden constructor */
-  }
-
-  public static ByteString getByteString(byte[] bytes) {
-    // return singleton to reduce object allocation
-    return ProtobufHelper.getByteString(bytes);
   }
 
   public static ShmId convert(ShortCircuitShmIdProto shmId) {
@@ -527,106 +522,6 @@ public class PBHelperClient {
     return new LimitInputStream(input, size);
   }
 
-  public static CipherOption convert(HdfsProtos.CipherOptionProto proto) {
-    if (proto != null) {
-      CipherSuite suite = null;
-      if (proto.getSuite() != null) {
-        suite = convert(proto.getSuite());
-      }
-      byte[] inKey = null;
-      if (proto.getInKey() != null) {
-        inKey = proto.getInKey().toByteArray();
-      }
-      byte[] inIv = null;
-      if (proto.getInIv() != null) {
-        inIv = proto.getInIv().toByteArray();
-      }
-      byte[] outKey = null;
-      if (proto.getOutKey() != null) {
-        outKey = proto.getOutKey().toByteArray();
-      }
-      byte[] outIv = null;
-      if (proto.getOutIv() != null) {
-        outIv = proto.getOutIv().toByteArray();
-      }
-      return new CipherOption(suite, inKey, inIv, outKey, outIv);
-    }
-    return null;
-  }
-
-  public static CipherSuite convert(HdfsProtos.CipherSuiteProto proto) {
-    switch (proto) {
-    case AES_CTR_NOPADDING:
-      return CipherSuite.AES_CTR_NOPADDING;
-    default:
-      // Set to UNKNOWN and stash the unknown enum value
-      CipherSuite suite = CipherSuite.UNKNOWN;
-      suite.setUnknownValue(proto.getNumber());
-      return suite;
-    }
-  }
-
-  public static HdfsProtos.CipherOptionProto convert(CipherOption option) {
-    if (option != null) {
-      HdfsProtos.CipherOptionProto.Builder builder =
-          HdfsProtos.CipherOptionProto.newBuilder();
-      if (option.getCipherSuite() != null) {
-        builder.setSuite(convert(option.getCipherSuite()));
-      }
-      if (option.getInKey() != null) {
-        builder.setInKey(getByteString(option.getInKey()));
-      }
-      if (option.getInIv() != null) {
-        builder.setInIv(getByteString(option.getInIv()));
-      }
-      if (option.getOutKey() != null) {
-        builder.setOutKey(getByteString(option.getOutKey()));
-      }
-      if (option.getOutIv() != null) {
-        builder.setOutIv(getByteString(option.getOutIv()));
-      }
-      return builder.build();
-    }
-    return null;
-  }
-
-  public static HdfsProtos.CipherSuiteProto convert(CipherSuite suite) {
-    switch (suite) {
-    case UNKNOWN:
-      return HdfsProtos.CipherSuiteProto.UNKNOWN;
-    case AES_CTR_NOPADDING:
-      return HdfsProtos.CipherSuiteProto.AES_CTR_NOPADDING;
-    default:
-      return null;
-    }
-  }
-
-  public static List<HdfsProtos.CipherOptionProto> convertCipherOptions(
-      List<CipherOption> options) {
-    if (options != null) {
-      List<HdfsProtos.CipherOptionProto> protos =
-          Lists.newArrayListWithCapacity(options.size());
-      for (CipherOption option : options) {
-        protos.add(convert(option));
-      }
-      return protos;
-    }
-    return null;
-  }
-
-  public static List<CipherOption> convertCipherOptionProtos(
-      List<HdfsProtos.CipherOptionProto> protos) {
-    if (protos != null) {
-      List<CipherOption> options =
-          Lists.newArrayListWithCapacity(protos.size());
-      for (HdfsProtos.CipherOptionProto proto : protos) {
-        options.add(convert(proto));
-      }
-      return options;
-    }
-    return null;
-  }
-
   public static LocatedBlock convertLocatedBlockProto(LocatedBlockProto proto) {
     if (proto == null) return null;
     List<DatanodeInfoProto> locs = proto.getLocsList();
@@ -749,7 +644,7 @@ public class PBHelperClient {
 
     byte[] handshake = blockTokenSecret.getHandshakeMsg();
     if (handshake != null && handshake.length > 0) {
-      builder.setHandshakeSecret(getByteString(handshake));
+      builder.setHandshakeSecret(CommonPBHelper.getByteString(handshake));
     }
     return builder.build();
   }
@@ -1030,7 +925,7 @@ public class PBHelperClient {
     if (b instanceof LocatedStripedBlock) {
       LocatedStripedBlock sb = (LocatedStripedBlock) b;
       byte[] indices = sb.getBlockIndices();
-      builder.setBlockIndices(PBHelperClient.getByteString(indices));
+      builder.setBlockIndices(CommonPBHelper.getByteString(indices));
       Token<BlockTokenIdentifier>[] blockTokens = sb.getBlockTokens();
       builder.addAllBlockTokens(convert(blockTokens));
     }
@@ -1093,7 +988,7 @@ public class PBHelperClient {
       builder.setName(a.getName());
     }
     if (a.getValue() != null) {
-      builder.setValue(getByteString(a.getValue()));
+      builder.setValue(CommonPBHelper.getByteString(a.getValue()));
     }
     return builder.build();
   }
@@ -1260,10 +1155,10 @@ public class PBHelperClient {
       return null;
     }
     return HdfsProtos.FileEncryptionInfoProto.newBuilder()
-        .setSuite(convert(info.getCipherSuite()))
+        .setSuite(CommonPBHelper.convert(info.getCipherSuite()))
         .setCryptoProtocolVersion(convert(info.getCryptoProtocolVersion()))
-        .setKey(getByteString(info.getEncryptedDataEncryptionKey()))
-        .setIv(getByteString(info.getIV()))
+        .setKey(CommonPBHelper.getByteString(info.getEncryptedDataEncryptionKey()))
+        .setIv(CommonPBHelper.getByteString(info.getIV()))
         .setEzKeyVersionName(info.getEzKeyVersionName())
         .setKeyName(info.getKeyName())
         .build();
@@ -1286,7 +1181,7 @@ public class PBHelperClient {
     if (proto == null) {
       return null;
     }
-    CipherSuite suite = convert(proto.getSuite());
+    CipherSuite suite = CommonPBHelper.convert(proto.getSuite());
     CryptoProtocolVersion version = convert(proto.getCryptoProtocolVersion());
     byte[] key = proto.getKey().toByteArray();
     byte[] iv = proto.getIv().toByteArray();
@@ -1323,7 +1218,7 @@ public class PBHelperClient {
         builder.setName(a.getName());
       }
       if (a.getValue() != null) {
-        builder.setValue(getByteString(a.getValue()));
+        builder.setValue(CommonPBHelper.getByteString(a.getValue()));
       }
       xAttrs.add(builder.build());
     }
@@ -1347,7 +1242,7 @@ public class PBHelperClient {
 
   public static EncryptionZone convert(EncryptionZoneProto proto) {
     return new EncryptionZone(proto.getId(), proto.getPath(),
-        convert(proto.getSuite()), convert(proto.getCryptoProtocolVersion()),
+        CommonPBHelper.convert(proto.getSuite()), convert(proto.getCryptoProtocolVersion()),
         proto.getKeyName());
   }
 
@@ -2232,8 +2127,8 @@ public class PBHelperClient {
     DataEncryptionKeyProto.Builder b = DataEncryptionKeyProto.newBuilder()
         .setKeyId(bet.keyId)
         .setBlockPoolId(bet.blockPoolId)
-        .setNonce(getByteString(bet.nonce))
-        .setEncryptionKey(getByteString(bet.encryptionKey))
+        .setNonce(CommonPBHelper.getByteString(bet.nonce))
+        .setEncryptionKey(CommonPBHelper.getByteString(bet.encryptionKey))
         .setExpiryDate(bet.expiryDate);
     if (bet.encryptionAlgorithm != null) {
       b.setEncryptionAlgorithm(bet.encryptionAlgorithm);
@@ -2318,10 +2213,10 @@ public class PBHelperClient {
             setGroupBytes(getFixedByteString(fs.getGroup())).
             setFileId(fs.getFileId()).
             setChildrenNum(fs.getChildrenNum()).
-            setPath(getByteString(fs.getLocalNameInBytes())).
+            setPath(CommonPBHelper.getByteString(fs.getLocalNameInBytes())).
             setStoragePolicy(fs.getStoragePolicy());
     if (fs.isSymlink())  {
-      builder.setSymlink(getByteString(fs.getSymlinkInBytes()));
+      builder.setSymlink(CommonPBHelper.getByteString(fs.getSymlinkInBytes()));
     }
     if (fs.getFileEncryptionInfo() != null) {
       builder.setFileEncryptionInfo(convert(fs.getFileEncryptionInfo()));
@@ -2354,7 +2249,7 @@ public class PBHelperClient {
     int snapshotNumber = status.getSnapshotNumber();
     int snapshotQuota = status.getSnapshotQuota();
     byte[] parentFullPath = status.getParentFullPath();
-    ByteString parentFullPathBytes = getByteString(
+    ByteString parentFullPathBytes = CommonPBHelper.getByteString(
         parentFullPath == null ? DFSUtilClient.EMPTY_BYTES : parentFullPath);
     HdfsFileStatusProto fs = convert(status.getDirStatus());
     SnapshottableDirectoryStatusProto.Builder builder =
@@ -2653,7 +2548,7 @@ public class PBHelperClient {
     if (entry == null) {
       return null;
     }
-    ByteString sourcePath = getByteString(entry.getSourcePath() == null ?
+    ByteString sourcePath = CommonPBHelper.getByteString(entry.getSourcePath() == null ?
         DFSUtilClient.EMPTY_BYTES : entry.getSourcePath());
     String modification = entry.getType().getLabel();
     SnapshotDiffReportEntryProto.Builder builder = SnapshotDiffReportEntryProto
@@ -2661,7 +2556,7 @@ public class PBHelperClient {
         .setModificationLabel(modification);
     if (entry.getType() == DiffType.RENAME) {
       ByteString targetPath =
-          getByteString(entry.getTargetPath() == null ?
+          CommonPBHelper.getByteString(entry.getTargetPath() == null ?
               DFSUtilClient.EMPTY_BYTES : entry.getTargetPath());
       builder.setTargetPath(targetPath);
     }
@@ -2673,13 +2568,13 @@ public class PBHelperClient {
     if (entry == null) {
       return null;
     }
-    ByteString sourcePath = getByteString(
+    ByteString sourcePath = CommonPBHelper.getByteString(
         entry.getSourcePath() == null ? DFSUtilClient.EMPTY_BYTES :
             DFSUtilClient.byteArray2bytes(entry.getSourcePath()));
     long dirId = entry.getDirId();
     long fileId = entry.getFileId();
     boolean isReference = entry.isReference();
-    ByteString targetPath = getByteString(
+    ByteString targetPath = CommonPBHelper.getByteString(
         entry.getTargetPath() == null ? DFSUtilClient.EMPTY_BYTES :
             DFSUtilClient.byteArray2bytes(entry.getTargetPath()));
     SnapshotDiffReportListingEntryProto.Builder builder =
@@ -2694,7 +2589,7 @@ public class PBHelperClient {
     if (report == null) {
       return null;
     }
-    ByteString startPath = getByteString(
+    ByteString startPath = CommonPBHelper.getByteString(
         report.getLastPath() == null ? DFSUtilClient.EMPTY_BYTES :
             report.getLastPath());
     List<DiffReportListingEntry> modifiedEntries = report.getModifyList();
@@ -2871,7 +2766,7 @@ public class PBHelperClient {
     return EncryptionZoneProto.newBuilder()
         .setId(zone.getId())
         .setPath(zone.getPath())
-        .setSuite(convert(zone.getSuite()))
+        .setSuite(CommonPBHelper.convert(zone.getSuite()))
         .setCryptoProtocolVersion(convert(zone.getVersion()))
         .setKeyName(zone.getKeyName())
         .build();
@@ -3024,8 +2919,8 @@ public class PBHelperClient {
       return null;
     }
     return HdfsProtos.PerFileEncryptionInfoProto.newBuilder()
-        .setKey(getByteString(info.getEncryptedDataEncryptionKey()))
-        .setIv(getByteString(info.getIV()))
+        .setKey(CommonPBHelper.getByteString(info.getEncryptedDataEncryptionKey()))
+        .setIv(CommonPBHelper.getByteString(info.getIV()))
         .setEzKeyVersionName(info.getEzKeyVersionName())
         .build();
   }
@@ -3042,7 +2937,7 @@ public class PBHelperClient {
       return null;
     }
     ZoneEncryptionInfoProto.Builder builder =
-        ZoneEncryptionInfoProto.newBuilder().setSuite(convert(suite))
+        ZoneEncryptionInfoProto.newBuilder().setSuite(CommonPBHelper.convert(suite))
             .setCryptoProtocolVersion(convert(version)).setKeyName(keyName);
     if (proto != null) {
       builder.setReencryptionProto(proto);

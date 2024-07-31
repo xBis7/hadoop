@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.thirdparty.protobuf.ByteString;
 
 import org.apache.hadoop.fs.StorageType;
@@ -198,7 +199,7 @@ public class PBHelper {
         .addAllStorageTypes(PBHelperClient.convertStorageTypes(blk.getStorageTypes()));
     if (blk instanceof StripedBlockWithLocations) {
       StripedBlockWithLocations sblk = (StripedBlockWithLocations) blk;
-      builder.setIndices(PBHelperClient.getByteString(sblk.getIndices()));
+      builder.setIndices(CommonPBHelper.getByteString(sblk.getIndices()));
       builder.setDataBlockNum(sblk.getDataBlockNum());
       builder.setCellSize(sblk.getCellSize());
     }
@@ -242,7 +243,7 @@ public class PBHelper {
 
   public static BlockKeyProto convert(BlockKey key) {
     byte[] encodedKey = key.getEncodedKey();
-    ByteString keyBytes = PBHelperClient.getByteString(encodedKey == null ?
+    ByteString keyBytes = CommonPBHelper.getByteString(encodedKey == null ?
         DFSUtilClient.EMPTY_BYTES : encodedKey);
     return BlockKeyProto.newBuilder().setKeyId(key.getKeyId())
         .setKeyBytes(keyBytes).setExpiryDate(key.getExpiryDate()).build();
@@ -379,7 +380,7 @@ public class PBHelper {
       RecoveringStripedBlock sb = (RecoveringStripedBlock) b;
       builder.setEcPolicy(PBHelperClient.convertErasureCodingPolicy(
           sb.getErasureCodingPolicy()));
-      builder.setBlockIndices(PBHelperClient.getByteString(sb.getBlockIndices()));
+      builder.setBlockIndices(CommonPBHelper.getByteString(sb.getBlockIndices()));
     }
     return builder.build();
   }
@@ -1083,11 +1084,11 @@ public class PBHelper {
     builder.setTargetStorageTypes(convertStorageTypesProto(targetStorageTypes));
 
     byte[] liveBlockIndices = blockEcRecoveryInfo.getLiveBlockIndices();
-    builder.setLiveBlockIndices(PBHelperClient.getByteString(liveBlockIndices));
+    builder.setLiveBlockIndices(CommonPBHelper.getByteString(liveBlockIndices));
 
     byte[] excludeReconstructedIndices = blockEcRecoveryInfo.getExcludeReconstructedIndices();
     builder.setExcludeReconstructedIndices(
-        PBHelperClient.getByteString(excludeReconstructedIndices));
+        CommonPBHelper.getByteString(excludeReconstructedIndices));
 
     builder.setEcPolicy(PBHelperClient.convertErasureCodingPolicy(
         blockEcRecoveryInfo.getErasureCodingPolicy()));

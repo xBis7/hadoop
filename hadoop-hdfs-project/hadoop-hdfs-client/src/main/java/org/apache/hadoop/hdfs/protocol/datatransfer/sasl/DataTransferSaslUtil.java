@@ -51,11 +51,12 @@ import org.apache.hadoop.hdfs.protocol.datatransfer.InvalidEncryptionKeyExceptio
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos.DataTransferEncryptorMessageProto;
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus;
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos.HandshakeSecretProto;
-import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos.CipherOptionProto;
 import org.apache.hadoop.hdfs.protocolPB.PBHelperClient;
 import org.apache.hadoop.hdfs.security.token.block.InvalidBlockTokenException;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.SaslPropertiesResolver;
 import org.apache.hadoop.security.SaslRpcServer.QualityOfProtection;
+import org.apache.hadoop.security.proto.SecurityProtos.CipherOptionProto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,19 +110,6 @@ public final class DataTransferSaslUtil {
           "channel does not have acceptable quality of protection, " +
           "requested = %s, negotiated = %s", requestedQop, negotiatedQop));
     }
-  }
-
-  /**
-   * Check whether requested SASL Qop contains privacy.
-   *
-   * @param saslProps properties of SASL negotiation
-   * @return boolean true if privacy exists
-   */
-  public static boolean requestedQopContainsPrivacy(
-      Map<String, String> saslProps) {
-    Set<String> requestedQop = ImmutableSet.copyOf(Arrays.asList(
-        saslProps.get(Sasl.QOP).split(",")));
-    return requestedQop.contains("auth-conf");
   }
 
   /**
@@ -251,7 +239,7 @@ public final class DataTransferSaslUtil {
       List<CipherOptionProto> optionProtos = proto.getCipherOptionList();
       if (optionProtos != null) {
         for (CipherOptionProto optionProto : optionProtos) {
-          cipherOptions.add(PBHelperClient.convert(optionProto));
+          cipherOptions.add(CommonPBHelper.convert(optionProto));
         }
       }
       return proto.getPayload().toByteArray();
@@ -361,7 +349,7 @@ public final class DataTransferSaslUtil {
       builder.setPayload(ByteString.copyFrom(payload));
     }
     if (option != null) {
-      builder.addCipherOption(PBHelperClient.convert(option));
+      builder.addCipherOption(CommonPBHelper.convert(option));
     }
 
     DataTransferEncryptorMessageProto proto = builder.build();
@@ -448,7 +436,7 @@ public final class DataTransferSaslUtil {
       builder.setPayload(ByteString.copyFrom(payload));
     }
     if (options != null) {
-      builder.addAllCipherOption(PBHelperClient.convertCipherOptions(options));
+      builder.addAllCipherOption(CommonPBHelper.convertCipherOptions(options));
     }
 
     DataTransferEncryptorMessageProto proto = builder.build();
@@ -469,7 +457,7 @@ public final class DataTransferSaslUtil {
       throws IOException {
     return readSaslMessage(in, proto -> {
       byte[] response = proto.getPayload().toByteArray();
-      List<CipherOption> options = PBHelperClient.convertCipherOptionProtos(
+      List<CipherOption> options = CommonPBHelper.convertCipherOptionProtos(
           proto.getCipherOptionList());
       CipherOption option = null;
       if (options != null && !options.isEmpty()) {

@@ -109,6 +109,7 @@ import org.apache.hadoop.hdfs.server.protocol.SlowPeerReports;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.hdfs.protocol.ErasureCodingPolicy;
 import org.apache.hadoop.io.erasurecode.ECSchema;
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.security.proto.SecurityProtos.TokenProto;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.test.GenericTestUtils;
@@ -133,7 +134,7 @@ public class TestPBHelper {
 
   @Test
   public void testGetByteString() {
-    assertSame(ByteString.EMPTY, PBHelperClient.getByteString(new byte[0]));
+    assertSame(ByteString.EMPTY, CommonPBHelper.getByteString(new byte[0]));
   }
 
   @Test

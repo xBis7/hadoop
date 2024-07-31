@@ -24,6 +24,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.thirdparty.com.google.common.collect.Lists;
 
 import java.util.Map;
@@ -1323,7 +1324,7 @@ public class ClientNamenodeProtocolTranslatorPB implements
             .setSnapshotRoot(snapshotRoot).setFromSnapshot(fromSnapshot)
             .setToSnapshot(toSnapshot).setCursor(
             HdfsProtos.SnapshotDiffReportCursorProto.newBuilder()
-                .setStartPath(PBHelperClient.getByteString(startPath))
+                .setStartPath(CommonPBHelper.getByteString(startPath))
                 .setIndex(index).build()).build();
     try {
       GetSnapshotDiffReportListingResponseProto result =

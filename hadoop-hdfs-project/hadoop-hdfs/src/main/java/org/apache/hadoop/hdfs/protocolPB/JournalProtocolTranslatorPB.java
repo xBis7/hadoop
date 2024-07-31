@@ -34,6 +34,7 @@ import org.apache.hadoop.ipc.ProtocolMetaInterface;
 import org.apache.hadoop.ipc.RPC;
 import org.apache.hadoop.ipc.RpcClientUtil;
 
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.thirdparty.protobuf.RpcController;
 import org.apache.hadoop.thirdparty.protobuf.ServiceException;
 
@@ -67,7 +68,7 @@ public class JournalProtocolTranslatorPB implements ProtocolMetaInterface,
         .setEpoch(epoch)
         .setFirstTxnId(firstTxnId)
         .setNumTxns(numTxns)
-        .setRecords(PBHelperClient.getByteString(records))
+        .setRecords(CommonPBHelper.getByteString(records))
         .build();
     try {
       rpcProxy.journal(NULL_CONTROLLER, req);

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+import org.apache.hadoop.protocolPB.CommonPBHelper;
 import org.apache.hadoop.thirdparty.com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.thirdparty.com.google.common.base.Preconditions;
 import org.apache.hadoop.thirdparty.com.google.common.collect.Lists;
@@ -417,7 +418,7 @@ public class EncryptionZoneManager {
             final HdfsProtos.ZoneEncryptionInfoProto ezProto =
                 HdfsProtos.ZoneEncryptionInfoProto.parseFrom(xAttr.getValue());
             return new EncryptionZoneInt(
-                inode.getId(), PBHelperClient.convert(ezProto.getSuite()),
+                inode.getId(), CommonPBHelper.convert(ezProto.getSuite()),
                 PBHelperClient.convert(ezProto.getCryptoProtocolVersion()),
                 ezProto.getKeyName());
           } catch (InvalidProtocolBufferException e) {

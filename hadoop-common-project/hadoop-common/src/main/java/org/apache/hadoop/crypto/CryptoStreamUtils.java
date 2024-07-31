@@ -94,7 +94,7 @@ public class CryptoStreamUtils {
    * @throws IOException raised on errors performing I/O.
    */
   public static long getInputStreamOffset(InputStream in) throws IOException {
-    if (in instanceof Seekable) {
+    if (in != null && in instanceof Seekable) {
       return ((Seekable) in).getPos();
     }
     return 0;
