@@ -33,6 +33,8 @@ import org.apache.hadoop.crypto.CipherOption;
 import org.apache.hadoop.crypto.CryptoCodec;
 import org.apache.hadoop.crypto.CryptoInputStream;
 import org.apache.hadoop.crypto.CryptoOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provide the functionality to allow for quality-of-protection (QOP) with
@@ -40,6 +42,7 @@ import org.apache.hadoop.crypto.CryptoOutputStream;
  * CryptoOutputStream to do decryption and encryption.
  */
 public class SaslCryptoCodec {
+  private static final Logger LOG = LoggerFactory.getLogger(SaslCryptoCodec.class);
   private static final int MAC_LENGTH = 10;
   private static final int SEQ_NUM_LENGTH = 4;
 
@@ -70,6 +73,7 @@ public class SaslCryptoCodec {
 
   public SaslCryptoCodec(Configuration conf, CipherOption cipherOption,
                          boolean isServer) throws IOException {
+    LOG.info("debug: SaslCryptoCodec constructor");
     CryptoCodec codec = CryptoCodec.getInstance(conf,
         cipherOption.getCipherSuite());
     byte[] inKey = cipherOption.getInKey();
