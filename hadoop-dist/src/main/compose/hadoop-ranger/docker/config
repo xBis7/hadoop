@@ -9,9 +9,10 @@ CORE-SITE.XML_hadoop.proxyuser.hive.hosts=*
 CORE-SITE.XML_hadoop.proxyuser.hive.groups=*
 
 # Rpc encryption
-# CORE-SITE.XML_hadoop.rpc.protection=privacy
+CORE-SITE.XML_hadoop.rpc.protection=privacy
 # CORE-SITE.XML_hadoop.rpc.security.crypto.cipher.suites=AES/CTR/NoPadding
-# HDFS-SITE.XML_dfs.data.transfer.protection=privacy
+HDFS-SITE.XML_dfs.data.transfer.protection=privacy
+HDFS-SITE.XML_dfs.encrypt.data.transfer=true
 
 HDFS-SITE.XML_dfs.namenode.rpc-address=namenode:8020
 HDFS-SITE.XML_dfs.replication=1
